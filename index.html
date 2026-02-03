@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Textklassificering AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; }
+        button { width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:disabled { background: #ccc; }
+        #debug { margin-top: 20px; background: #222; color: #0f0; padding: 15px; border-radius: 5px; width: 100%; max-width: 500px; font-family: monospace; font-size: 12px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>AI Text-analys</h2>
+    <p id="status">⏳ Kontrollerar modellfiler...</p>
+    
+    <div id="ui" style="display:none;">
+        <textarea id="textInput" placeholder="Skriv din text här..."></textarea>
+        <button id="predictBtn" onclick="classifyText()">Analysera text</button>
+        <h3 id="result">Resultat: -</h3>
+    </div>
+</div>
+
+<div id="debug">
+    <strong>Systemlogg:</strong><hr>
+    <div id="log"></div>
+</div>
+
+<script>
+    let model;
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+
+    function log(msg) { logEl.innerHTML += `> ${msg}<br>`; }
+
+    async function loadModel() {
+        // Kontrollera att sökvägen stämmer (stora/små bokstäver spelar roll!)
+        const modelPath = 'tfjs_model/model.json'; 
+        log(`Försöker ladda: ${modelPath}`);
+
+        try {
+            model = await tf.loadLayersModel(modelPath);
+            log("✅ Modell laddad!");
+            statusEl.innerText = "✅ Klar att använda";
+            document.getElementById('ui').style.display = "block";
+        } catch (err) {
+            log(`<span class="error">❌ FEL: ${err.message}</span>`);
+            log("Tips: Kolla att mappen heter exakt 'tfjs_model' (inga stora bokstäver).");
+            statusEl.innerText = "❌ Kunde inte ladda modellen.";
+        }
+    }
+
+    async function classifyText() {
+        const text = document.getElementById('textInput').value;
+        if(!text) return;
+
+        log(`Analyserar: "${text.substring(0, 20)}..."`);
+        
+        // OBS: Textmodeller kräver ofta förarbete (tokenization).
+        // Här skickar vi in en enkel tensor som exempel.
+        try {
+            const inputTensor = tf.tensor2d([[1]], [1, 1]); // Detta måste anpassas efter din modells input
+            const prediction = model.predict(inputTensor);
+            const data = await prediction.data();
+            
+            document.getElementById('result').innerText = `Resultat: ${data[0].toFixed(4)}`;
+            log(`Prediction klar: ${data[0]}`);
+        } catch (err) {
+            log(`❌ Prediction misslyckades: ${err.message}`);
+        }
+    }
+
+    loadModel();
+</script>
+</body>
+</html>
