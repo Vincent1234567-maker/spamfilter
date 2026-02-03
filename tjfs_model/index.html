@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min Keras Modell på GitHub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        #debug-box { 
+            margin-top: 50px; padding: 10px; background: #f4f4f4; 
+            border: 1px solid #ccc; font-family: monospace; font-size: 12px;
+            max-height: 200px; overflow-y: auto;
+        }
+        .status { font-weight: bold; color: orange; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AI-modell i webbläsaren</h1>
+    <p>Status: <span id="status" class="status">Laddar modell...</span></p>
+    
+    <div id="ui" style="display:none;">
+        <label for="inputValue">Mata in värde:</label>
+        <input type="number" id="inputValue" value="1">
+        <button onclick="runPrediction()">Kör modell</button>
+        <h3>Resultat: <span id="result">-</span></h3>
+    </div>
+</div>
+
+<div id="debug-box">
+    <strong>Debug-logg:</strong><br>
+    <div id="log-content"></div>
+</div>
+
+<script>
+    let model;
+    const logContent = document.getElementById('log-content');
+    const statusEl = document.getElementById('status');
+
+    // Funktion för att skriva till debug-rutan
+    function debugLog(message) {
+        const time = new Date().toLocaleTimeString();
+        logContent.innerHTML += `[${time}] ${message}<br>`;
+        console.log(message);
+    }
+
+    // 1. Ladda modellen
+    async function init() {
+        debugLog("Försöker ladda modell från ./tfjs_model/model.json...");
+        try {
+            // Sökvägen antar att index.html och mappen tfjs_model ligger i samma rot på GitHub
+            model = await tf.loadLayersModel('./tfjs_model/model.json');
+            debugLog("Modell laddad framgångsrikt!");
+            statusEl.innerText = "Klar!";
+            statusEl.style.color = "green";
+            document.getElementById('ui').style.display = "block";
+        } catch (error) {
+            debugLog("FEL vid laddning: " + error.message);
+            statusEl.innerText = "Kunde inte ladda modellen.";
+            statusEl.style.color = "red";
+        }
+    }
+
+    // 2. Kör förutsägelse
+    async function runPrediction() {
+        const val = parseFloat(document.getElementById('inputValue').value);
+        debugLog(`Kör prediction för värde: ${val}`);
+
+        // Skapa en tensor (AI-dataformat) baserat på din modells input
+        // Här antar vi en enkel modell med 1 input-värde
+        const inputTensor = tf.tensor2d([val], [1, 1]); 
+        
+        const prediction = model.predict(inputTensor);
+        const resultData = await prediction.data();
+        
+        document.getElementById('result').innerText = resultData[0].toFixed(4);
+        debugLog(`Resultat: ${resultData[0]}`);
+        
+        // Städa upp minne
+        inputTensor.dispose();
+        prediction.dispose();
+    }
+
+    // Starta laddning när sidan visas
+    init();
+</script>
+
+</body>
+</html>
