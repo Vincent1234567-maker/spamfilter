@@ -54,7 +54,7 @@
         try {
             // Skapar en enkel "dummy"-input för att testa att modellen körs
             // Obs: Denna rad behöver vi justera senare för att matcha din modells input-krav
-            const input = tf.ones([1, 10]); 
+            const input = tf.ones([1, 30]); 
             const pred = model.predict(input);
             const data = await pred.data();
             document.getElementById('result').innerText = `Resultat: ${data[0].toFixed(4)}`;
